@@ -1,7 +1,6 @@
 #include "Include/Wrapper.h"
 #include <thread>
 #include <chrono>
-#include <iostream>
 
 using wrp::INT;
 using wrp::UINT;
@@ -64,17 +63,18 @@ BOOL PollInput(gamepad* Result, const INT& gamepadNum = 0 ) {
 				return true;
 }
 
-INT wrp::MAIN(wrp::ProgramContext* Context) {
+void wrp::MAIN(wrp::ProgramContext* Context) {
+				
 				INT c = 0;
-
 				while (Context->ShouldBeRunning) {
-								std::cout << c;
 								c++;
-								if (c == 10) Context->ShouldBeRunning = false;
 
 								std::chrono::duration<FLOAT> second = std::chrono::seconds(1);
 								std::this_thread::sleep_for(second);
+
+								if (c == 10) Context->ShouldBeRunning = false;
 				}
+
 				//gamepad Gamepad;
 
 
@@ -84,5 +84,7 @@ INT wrp::MAIN(wrp::ProgramContext* Context) {
 								std::cout << "\033[31;1mR: " << Gamepad.JRX << ", " << Gamepad.JRY << "\033[0m\n";
 
 				}*/
-				return 0;
+				
+				Context->IsAlive = false;
+
 }

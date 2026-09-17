@@ -1,7 +1,9 @@
 #ifdef __WIN64__
 #define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
 
-#include <Windows.h>
+#include <windows.h>
+
 #include <thread>
 #include "../Include/Wrapper.h"
 
@@ -45,10 +47,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 
 				ATOM WCID = RegisterClass(&WindowClass);
 				
-				if (!WCID) {
-								//std::cout << "\033[31;1m" << GetLastError() << "\033[0m";
-								return 0;
-				}
+				if (!WCID) return 0; // Exit if Windows failed to create a Window
 
 				HWND WindowHandle = CreateWindowA(
 								WindowClass.lpszClassName,												
@@ -61,6 +60,8 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 								0, 0, GetModuleHandle(0), 0);	
 				
 				wrp::ProgramContext pc;
+				
+				// Define everything for OpenGL wrp struct
 
 				std::thread SysAgnosticCode(wrp::MAIN, &pc);
 				SysAgnosticCode.detach();
@@ -75,6 +76,23 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 												TranslateMessage(&msg);
 												DispatchMessage(&msg);
 								}
+				}
+
+				CloseWindow(WindowHandle);
+
+				pc.ShouldBeRunning = false;
+
+				// Wait for the detached thread to end execution before exiting.
+				// Will exit anyways if the detached thread does not close in 5 seconds.
+
+				int c = 0;
+				while (pc.IsAlive) {
+								if (c == 5) break;
+								
+								c++;
+
+								std::chrono::duration<FLOAT> second = std::chrono::seconds(1);
+								std::this_thread::sleep_for(second);
 				}
 				
 				return windowContext.ExitVal; 
