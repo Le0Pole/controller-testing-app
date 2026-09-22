@@ -1,3 +1,4 @@
+#include <libloaderapi.h>
 #ifdef __WIN64__
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
@@ -36,7 +37,30 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 				// Run System Agnostic Main Function in a seperate thread
 				
 				// Keep Window alive and provide openGl rendering?
+	
+				WNDCLASS DummyWC = {sizeof(DummyWC)};
+
+				DummyWC.lpfnWndProc = DefWindowProc;
+				DummyWC.hInstance = GetModuleHandle(NULL);
+				DummyWC.lpszClassName = "DummyWindowClass";
+
+				ATOM DWCID = RegisterClass(&DummyWC);
+				if (!DWCID) return 0;
+
+				HWND DW = CreateWindowA(
+												DummyWC.lpszClassName,
+												"You are not supposed to see this",
+												WS_DISABLED,
+												0,
+												0,
+												0,
+												0,
+												NULL, NULL, GetModuleHandle(NULL), 0);
+
 				
+
+				DestroyWindow(DW);
+
 				WNDCLASS WindowClass = {sizeof(WNDCLASS)};
 
 				WindowClass.hCursor = LoadCursor(0, IDC_ARROW);

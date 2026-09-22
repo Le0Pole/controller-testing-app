@@ -8,7 +8,7 @@ namespace wrp {
 				typedef unsigned int UINT;
 				
 				struct OpenGL_Context {
-								
+																
 				};
 
 				struct ProgramContext {
