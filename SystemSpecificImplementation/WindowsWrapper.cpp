@@ -1,4 +1,3 @@
-#include <libloaderapi.h>
 #ifdef __WIN64__
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
@@ -7,6 +6,8 @@
 
 #include <thread>
 #include "../Include/Wrapper.h"
+
+#include <wingdi.h>
 
 struct WindowContext {
 				bool running = true;
@@ -38,29 +39,66 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 				
 				// Keep Window alive and provide openGl rendering?
 	
-				WNDCLASS DummyWC = {sizeof(DummyWC)};
+				wrp::ProgramContext pc;
 
-				DummyWC.lpfnWndProc = DefWindowProc;
-				DummyWC.hInstance = GetModuleHandle(NULL);
-				DummyWC.lpszClassName = "DummyWindowClass";
-
-				ATOM DWCID = RegisterClass(&DummyWC);
-				if (!DWCID) return 0;
-
-				HWND DW = CreateWindowA(
-												DummyWC.lpszClassName,
-												"You are not supposed to see this",
-												WS_DISABLED,
-												0,
-												0,
-												0,
-												0,
-												NULL, NULL, GetModuleHandle(NULL), 0);
-
+				// Wierd windows method of getting an OpenGL context
+				{
+								WNDCLASS DummyWC = {sizeof(DummyWC)};
 				
+								DummyWC.lpfnWndProc = DefWindowProc;
+								DummyWC.hInstance = GetModuleHandle(NULL);
+								DummyWC.lpszClassName = "DummyWindowClass";
 
-				DestroyWindow(DW);
+								ATOM DWCID = RegisterClass(&DummyWC);
+								if (!DWCID) return 0;
 
+								HWND DW = CreateWindowA(
+																DummyWC.lpszClassName,
+																"You are not supposed to see this",
+																WS_DISABLED,
+																0,
+																0,
+																0,
+																0,
+																NULL, NULL, GetModuleHandle(NULL), 0);
+				
+								// Getting a device context and setting the PFD
+
+								PIXELFORMATDESCRIPTOR pfd = {
+												sizeof(PIXELFORMATDESCRIPTOR),
+												1,
+												PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,
+												PFD_TYPE_RGBA,
+												24,
+												0, 0, 
+												0, 0, 
+												0, 0,
+								        8, 0,
+												0, 0, 0, 0, 0,
+												32,
+												8, 
+												0,
+												PFD_MAIN_PLANE,
+												0, 0, 0, 0
+								};
+
+								HDC DummyDC = GetDC(DW);
+
+								int DummyPFID = ChoosePixelFormat(DummyDC,&pfd);
+								if (!DummyPFID) return 0;
+								if (!SetPixelFormat(DummyDC, DummyPFID, &pfd)) return 0;
+				
+								// Getting the Rendering Context
+								
+								HGLRC DummyContext = wglCreateContext(DummyDC);
+								if (!DummyDC) return 0;
+								wglMakeCurrent(DummyDC, DummyContext);
+								
+
+								DestroyWindow(DW);
+				}
+				//
+				
 				WNDCLASS WindowClass = {sizeof(WNDCLASS)};
 
 				WindowClass.hCursor = LoadCursor(0, IDC_ARROW);
@@ -83,11 +121,10 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 								CW_USEDEFAULT, 
 								0, 0, GetModuleHandle(0), 0);	
 				
-				wrp::ProgramContext pc;
 				
 				// Define everything for OpenGL wrp struct
 
-				std::thread SysAgnosticCode(wrp::MAIN, &pc);
+				std::thread SysAgnosticCode(wrp::_MAIN, &pc);
 				SysAgnosticCode.detach();
 
 				MSG msg = {};

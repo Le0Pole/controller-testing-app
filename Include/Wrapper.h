@@ -1,5 +1,6 @@
 #pragma once
 
+
 namespace wrp {
 				
 				typedef int INT;
@@ -8,7 +9,7 @@ namespace wrp {
 				typedef unsigned int UINT;
 				
 				struct OpenGL_Context {
-																
+																								
 				};
 
 				struct ProgramContext {
@@ -18,7 +19,10 @@ namespace wrp {
 								OpenGL_Context OpenGL;
 
 				};
-
 				void MAIN(ProgramContext* Context);
+
+				void _MAIN(ProgramContext* Context) {
+								MAIN(Context);
+				}
 
 }
