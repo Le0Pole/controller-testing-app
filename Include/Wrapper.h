@@ -21,8 +21,6 @@ namespace wrp {
 				};
 				void MAIN(ProgramContext* Context);
 
-				void _MAIN(ProgramContext* Context) {
-								MAIN(Context);
-				}
+				void _MAIN(ProgramContext* Context);
 
 }
