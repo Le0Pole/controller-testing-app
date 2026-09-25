@@ -136,7 +136,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 				HWND WindowHandle = CreateWindowA(
 								WindowClass.lpszClassName,												
 								"Controller Testing Application", 
-								WS_OVERLAPPEDWINDOW | WS_VISIBLE, 
+								WS_OVERLAPPEDWINDOW, 
 								CW_USEDEFAULT, 
 								CW_USEDEFAULT, 
 								CW_USEDEFAULT, 
@@ -152,26 +152,41 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 
 				int attribs[] = {
                 0x2003, 0x2027, // WGL_ACCELERATION_ARB | WGL_FULL_ACCELERATION_ARB
-                0x201b, 8, // WGL_ALPHA_BITS_ARB
-                0x2022, 24, // WGL_DEPTH_BITS_ARB
-                0x2001, 1, // WGL_DRAW_TO_WINDOW_ARB
-								0x2015, 8, // WGL_RED_BITS_ARB
-								0x2017, 8, // WGL_GREEN_BITS_ARB
-								0x2019, 8, // WGL_BLUE_BITS_ARB
+                0x201b, 8,      // WGL_ALPHA_BITS_ARB
+                0x2022, 24,     // WGL_DEPTH_BITS_ARB
+                0x2001, 1,      // WGL_DRAW_TO_WINDOW_ARB
+								0x2015, 8,      // WGL_RED_BITS_ARB
+								0x2017, 8,      // WGL_GREEN_BITS_ARB
+								0x2019, 8,      // WGL_BLUE_BITS_ARB
                 0x2013, 0x202B, // WGL_PIXEL_TYPE_ARB | WGL_TYPE_RGBA_ARB
-                0x2010,		1, // WGL_SUPPORT_OPENGL_ARB
-								0x2014,	 32, // WGL_COLOR_BITS_ARB
+                0x2010,	1,      // WGL_SUPPORT_OPENGL_ARB
+								0x2014,	32,     // WGL_COLOR_BITS_ARB
+								0x2023, 1,      // WGL_DOUBLE_BUFFER_ARB
+								0x2012, false,  // WGL_STEREO_ARB
+								0x2024, 0,      // WGL_AUX_BUFFERS_ARB
                 0, 0
         };
 				
 				int PFormat = 0;
 				unsigned int NumFormat = 0;
-				wglChoosePixelFormatARB(WindowDC, attribs, 0, 1, &PFormat, &NumFormat);
+				if (!wglChoosePixelFormatARB(WindowDC, attribs, 0, 1, &PFormat, &NumFormat)) return 0; // Add Error Logging Later.
+				
+				PIXELFORMATDESCRIPTOR pfd = {sizeof(PIXELFORMATDESCRIPTOR)};
+				
+				if (DescribePixelFormat(WindowDC, PFormat, sizeof(PFormat), &pfd) == 0) return 0; // Add Error Logging Later.
+				if (!SetPixelFormat(WindowDC, PFormat, &pfd)) return 0; // Add Error Logging Later.
+				
+				int CtxAttribs[] = {
+								0x9126, 0x00000002 // WGL_CONTEXT_PROFILE_MASK_ARB | WGL_CONTEXT_CORE_PROFILE_BIT_ARB
+				};
 
 				HGLRC WGLC = wglCreateContextAttribsARB(WindowDC, 0, attribs);
 
 				std::thread SysAgnosticCode(wrp::_MAIN, &ProgContext);
 				SysAgnosticCode.detach();
+				
+				ShowWindow(WindowHandle, SW_SHOW);
+				UpdateWindow(WindowHandle);
 
 				MSG msg = {};
 				while (windowContext.running) {
