@@ -1,13 +1,12 @@
 #ifdef __WIN64__
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
-
 #include <windows.h>
+#include <GL/gl.h>
 
 #include <thread>
-#include "../Include/Wrapper.h"
 
-#include <wingdi.h>
+#include "../Include/Wrapper.h"
 
 struct WindowContext {
 				bool running = true;
@@ -55,7 +54,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 								DummyWC.lpszClassName = "DummyWindowClass";
 
 								ATOM DWCID = RegisterClass(&DummyWC);
-								if (!DWCID) return 0;      // Add Error Logging Later.
+								if (!DWCID) return 1;      // Add Error Logging Later.
 
 								HWND DW = CreateWindowA(
 																DummyWC.lpszClassName,
@@ -90,23 +89,23 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 								HDC DummyDC = GetDC(DW);
 
 								int DummyPFID = ChoosePixelFormat(DummyDC,&pfd);
-								if (!DummyPFID) return 0;      // Add Error Logging Later.
-								if (!SetPixelFormat(DummyDC, DummyPFID, &pfd)) return 0;      // Add Error Logging Later.
+								if (!DummyPFID) return 1;      // Add Error Logging Later.
+								if (!SetPixelFormat(DummyDC, DummyPFID, &pfd)) return 1;      // Add Error Logging Later.
 				
 								// Getting the Rendering Context
 								
 								HGLRC DummyContext = wglCreateContext(DummyDC);
-								if (!DummyDC) return 0;      // Add Error Logging Later.
+								if (!DummyContext) return 1;      // Add Error Logging Later.
 								wglMakeCurrent(DummyDC, DummyContext);
 	
 
 
 								PROC RetPROC = wglGetProcAddress("wglCreateContextAttribsARB");
-								if (RetPROC == NULL) return 0;      // Add Error Logging Later.
+								if (RetPROC == NULL) return 1;      // Add Error Logging Later.
 								wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC) RetPROC;
 
 								RetPROC = wglGetProcAddress("wglChoosePixelFormatARB");
-								if (RetPROC == NULL) return 0;      // Add Error Logging Later.
+								if (RetPROC == NULL) return 1;      // Add Error Logging Later.
 								wglChoosePixelFormatARB = (PFNWGLCHOOSEPIXELFORMATARBPROC) RetPROC;
 
 
@@ -129,7 +128,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 
 				ATOM WCID = RegisterClass(&WindowClass);
 				
-				if (!WCID) return 0;       // Add Error Logging Later.
+				if (!WCID) return 1;       // Add Error Logging Later.
 
 				// Starting Window
 
@@ -143,10 +142,10 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 								CW_USEDEFAULT, 
 								0, 0, GetModuleHandle(0), 0);	
 				
-				if (WindowHandle == NULL) return 0;       // Add Error Logging Later.
+				if (WindowHandle == NULL) return 1;       // Add Error Logging Later.
 
 				HDC WindowDC = GetDC(WindowHandle);
-				if (WindowDC == NULL) return 0;      // Add Error Logging Later.
+				if (WindowDC == NULL) return 1;      // Add Error Logging Later.
 
 				// Define everything for OpenGL wrp struct
 
@@ -169,18 +168,21 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 				
 				int PFormat = 0;
 				unsigned int NumFormat = 0;
-				if (!wglChoosePixelFormatARB(WindowDC, attribs, 0, 1, &PFormat, &NumFormat)) return 0; // Add Error Logging Later.
+				if (!wglChoosePixelFormatARB(WindowDC, attribs, 0, 1, &PFormat, &NumFormat)) return 1; // Add Error Logging Later.
 				
 				PIXELFORMATDESCRIPTOR pfd = {sizeof(PIXELFORMATDESCRIPTOR)};
 				
-				if (DescribePixelFormat(WindowDC, PFormat, sizeof(PFormat), &pfd) == 0) return 0; // Add Error Logging Later.
-				if (!SetPixelFormat(WindowDC, PFormat, &pfd)) return 0; // Add Error Logging Later.
+				if (DescribePixelFormat(WindowDC, PFormat, sizeof(pfd), &pfd) == 0) return 1; // Add Error Logging Later.
+				if (!SetPixelFormat(WindowDC, PFormat, &pfd)) return 1; // Add Error Logging Later.
 				
 				int CtxAttribs[] = {
-								0x9126, 0x00000002 // WGL_CONTEXT_PROFILE_MASK_ARB | WGL_CONTEXT_CORE_PROFILE_BIT_ARB
+								0x9126, 0x00000001, // WGL_CONTEXT_PROFILE_MASK_ARB | WGL_CONTEXT_CORE_PROFILE_BIT_ARB
+								0x2091, 3, // WGL_CONTEXT_MAJOR_VERSION_ARB
+								0x2092, 3, // WGL_CONTEXT_MINOR_VERSION_ARB
+								0, 0
 				};
 
-				HGLRC WGLC = wglCreateContextAttribsARB(WindowDC, 0, attribs);
+				HGLRC WGLCtx = wglCreateContextAttribsARB(WindowDC, 0, CtxAttribs);
 
 				std::thread SysAgnosticCode(wrp::_MAIN, &ProgContext);
 				SysAgnosticCode.detach();
@@ -189,33 +191,29 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 				UpdateWindow(WindowHandle);
 
 				MSG msg = {};
-				while (windowContext.running) {
-								if (!ProgContext.ShouldBeRunning) {
-												break;
+				while (ProgContext.IsAlive) {
+								if (!windowContext.running) {
+												ProgContext.ShouldBeRunning = false;
 								}
 
 								while (PeekMessage(&msg, WindowHandle, 0, 0, PM_REMOVE) > 0) {
 												TranslateMessage(&msg);
 												DispatchMessage(&msg);
 								}
-				}
-
-				CloseWindow(WindowHandle);
-
-				ProgContext.ShouldBeRunning = false;
-
-				// Wait for the detached thread to end execution before exiting.
-				// Will exit anyways if the detached thread does not close in 5 seconds.
-
-				int c = 0;
-				while (ProgContext.IsAlive) {
-								if (c == 5) break;
 								
-								c++;
+								wglMakeCurrent(WindowDC, WGLCtx);
 
-								std::chrono::duration<FLOAT> second = std::chrono::seconds(1);
-								std::this_thread::sleep_for(second);
+								glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+								glClear(GL_COLOR_BUFFER_BIT);
+        
+								SwapBuffers(WindowDC);
+
+								wglMakeCurrent(NULL, NULL);
 				}
+
+				wglDeleteContext(WGLCtx);
+				DeleteDC(WindowDC);
+				DestroyWindow(WindowHandle);
 				
 				return windowContext.ExitVal; 
 }

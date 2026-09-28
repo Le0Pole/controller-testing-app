@@ -68,7 +68,7 @@ void wrp::MAIN(wrp::ProgramContext* Context) {
 				INT c = 0;
 				while (Context->ShouldBeRunning) {
 								c++;
-
+								
 								std::chrono::duration<FLOAT> second = std::chrono::seconds(1);
 								std::this_thread::sleep_for(second);
 
@@ -85,6 +85,5 @@ void wrp::MAIN(wrp::ProgramContext* Context) {
 
 				}*/
 				
-				Context->IsAlive = false;
 
 }
