@@ -8,6 +8,7 @@ namespace wrp {
 				typedef float FLOAT;
 				typedef bool BOOL;
 				typedef unsigned int UINT;
+				typedef std::string STRING;
 				
 				struct OpenGL_Context {
 								
@@ -27,13 +28,28 @@ namespace wrp {
 
 								private:
 				
-								LogType LOG_TYPES; 
-				
-								public:
+								LogType LOG_TYPES;
+								STRING Log;
 
-								void Info(std::string Info);
-								void Warn(std::string Warning);
-								void Err (std::string Error);
+								STRING (*ErrCallbackFunc)();
+								STRING (*WarnCallbackFunc)();
+								STRING (*InfoCallbackFunc)();
+
+								public:
+								
+								INT  SaveLogToFile();
+								void ChangeLogLevel(LogType LogLevel);
+
+								void ErrSetCallbackForMoreInfo(STRING (*CallbackFunction)());
+								void WarnSetCallbackForMoreInfo(STRING (*CallbackFunction)());
+								void InfoSetCallbackForMoreInfo(STRING (*CallbackFunction)());
+
+								void Info(STRING Info);
+								void Info(STRING Info, INT Line);
+								void Warn(STRING Warning);
+								void Warn(STRING Warning, INT Line);
+								void Err (STRING Error);
+								void Err (STRING Error, INT Line);
 
 				};
 
