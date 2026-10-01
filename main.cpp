@@ -1,4 +1,5 @@
 #include "Include/Wrapper.h"
+#include <string>
 #include <thread>
 #include <chrono>
 
@@ -63,16 +64,21 @@ BOOL PollInput(gamepad* Result, const INT& gamepadNum = 0 ) {
 				return true;
 }
 
-void wrp::MAIN(wrp::ProgramContext* Context) {
+void wrp::MAIN(wrp::ProgramContext* Ctx) {
 				
 				INT c = 0;
-				while (Context->ShouldBeRunning) {
+				while (Ctx->ShouldBeRunning) {
 								c++;
 								
+								Ctx->Log.Info(std::to_string(c));
+								Ctx->Log.Info(std::to_string(c), __LINE__, __FILE_NAME__, __FUNCTION__);
+								Ctx->Log.Warn("This is a warning!", __LINE__, __FILE_NAME__, __FUNCTION__);
+								Ctx->Log.Err("FATAL ERROR!", "(trust!)", __LINE__, __FILE_NAME__, __FUNCTION__);
+
 								std::chrono::duration<FLOAT> second = std::chrono::seconds(1);
 								std::this_thread::sleep_for(second);
 
-								if (c == 10) Context->ShouldBeRunning = false;
+								if (c == 10) Ctx->ShouldBeRunning = false;
 				}
 
 				//gamepad Gamepad;

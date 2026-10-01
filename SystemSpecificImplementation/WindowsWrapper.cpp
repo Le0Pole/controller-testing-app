@@ -5,6 +5,7 @@
 #include <GL/gl.h>
 
 #include <thread>
+#include <string>
 
 #include "../Include/Wrapper.h"
 
@@ -48,8 +49,11 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 								DummyWC.hInstance = GetModuleHandle(NULL);
 								DummyWC.lpszClassName = "DummyWindowClass";
 
-								ATOM DWCID = RegisterClass(&DummyWC);
-								if (!DWCID) return 1;      // Add Error Logging Later.
+								if (!RegisterClass(&DummyWC)) {
+												DWORD Code = GetLastError();
+												ProgContext.Log.Err("Failed to register the dummy Window Class.", "Sys err code: " + std::to_string(Code), __LINE__, __FILE_NAME__, __FUNCTION__);
+												return Code;
+								}
 
 								HWND DW = CreateWindowA(
 												DummyWC.lpszClassName,
@@ -60,7 +64,12 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 												0,
 												0,
 												NULL, NULL, GetModuleHandle(NULL), 0);
-				
+								if (DW == NULL) {
+												DWORD Code = GetLastError();
+												ProgContext.Log.Err("Failed to create the dummy window.", "Sys err code: " + std::to_string(Code), __LINE__, __FILE_NAME__, __FUNCTION__);
+												return Code;
+								}
+
 								// Getting a device context and setting the PFD
 
 								PIXELFORMATDESCRIPTOR pfd = {
@@ -82,26 +91,51 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 								};
 
 								HDC DummyDC = GetDC(DW);
+								if (DummyDC == NULL) {
+												DWORD Code = GetLastError();
+												ProgContext.Log.Err("Failed to create Device Context.", "Sys err code: " + std::to_string(Code), __LINE__, __FILE_NAME__, __FUNCTION__);
+												return Code;
+								}
 
 								int DummyPFID = ChoosePixelFormat(DummyDC,&pfd);
-								if (!DummyPFID) return 1;      // Add Error Logging Later.
-								if (!SetPixelFormat(DummyDC, DummyPFID, &pfd)) return 1;      // Add Error Logging Later.
+								if (!DummyPFID) {
+												DWORD Code = GetLastError();
+												ProgContext.Log.Err("Failed to find PixelFormat for dummy context.", "Sys err code: " + std::to_string(Code), __LINE__, __FILE_NAME__, __FUNCTION__);
+												return Code;
+								}
+								if (!SetPixelFormat(DummyDC, DummyPFID, &pfd)) {
+												DWORD Code = GetLastError();
+												ProgContext.Log.Err("Failed to set the PixelFormat for dummy context.", "Sys err code: " + std::to_string(Code), __LINE__, __FILE_NAME__, __FUNCTION__);
+												return Code;
+								};
 				
 								// Getting the Rendering Context
 								
 								HGLRC DummyContext = wglCreateContext(DummyDC);
-								if (!DummyContext) return 1;      // Add Error Logging Later.
+								if (!DummyContext) {
+												DWORD Code = GetLastError();
+												ProgContext.Log.Err("Failed to create the dummy OpenGL context.", "Sys err code: " + std::to_string(Code), __LINE__, __FILE_NAME__, __FUNCTION__);
+												return Code;
+								}
 								wglMakeCurrent(DummyDC, DummyContext);
 								
 								typedef HGLRC (WINAPI *PFNWGLCREATECONTEXTATTRIBSARBPROC)(HDC hDC, HGLRC hShareContext, const int *attribList);
 								PROC RetPROC = wglGetProcAddress("wglCreateContextAttribsARB");
-								if (RetPROC == NULL) return 1;      // Add Error Logging Later.
+								if (RetPROC == NULL) {
+												DWORD Code = GetLastError();
+												ProgContext.Log.Err("Failed to locate wglCreateContextAttribsARB.", "Sys err code: " + std::to_string(Code), __LINE__, __FILE_NAME__, __FUNCTION__);
+												return Code;
+								}
 								PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC) RetPROC;
 								
 								
 								typedef bool (WINAPI *PFNWGLCHOOSEPIXELFORMATARBPROC)(HDC hdc, const int *piAttribIList, const float *pfAttribFList, unsigned int nMaxFormats, int *piFormats, unsigned int *nNumFormats);
 								RetPROC = wglGetProcAddress("wglChoosePixelFormatARB");
-								if (RetPROC == NULL) return 1;      // Add Error Logging Later.
+								if (RetPROC == NULL) {
+												DWORD Code = GetLastError();
+												ProgContext.Log.Err("Failed to locate wglChoosePixelFormatARB.", "Sys err code: " + std::to_string(Code), __LINE__, __FILE_NAME__, __FUNCTION__);
+												return Code;
+								}
 								PFNWGLCHOOSEPIXELFORMATARBPROC wglChoosePixelFormatARB = (PFNWGLCHOOSEPIXELFORMATARBPROC) RetPROC;
 
 								wglMakeCurrent(NULL, NULL);
@@ -115,10 +149,12 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 								WindowClass.lpszClassName = "MainWindowClass";
 								WindowClass.style = CS_HREDRAW | CS_VREDRAW;
 								WindowClass.lpfnWndProc = windProc;
-				
-								ATOM WCID = RegisterClass(&WindowClass);
 								
-								if (!WCID) return 1;       // Add Error Logging Later.
+								if (!RegisterClass(&WindowClass)) {
+												DWORD Code = GetLastError();
+												ProgContext.Log.Err("Failed to register the dummy Window Class.", "Sys err code: " + std::to_string(Code), __LINE__, __FILE_NAME__, __FUNCTION__);
+												return Code;
+								}
 				
 								// Starting Window
 				
@@ -132,10 +168,18 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 												CW_USEDEFAULT, 
 												0, 0, GetModuleHandle(0), 0);	
 								
-								if (WindowHandle == NULL) return 1;       // Add Error Logging Later.
-				
+								if (WindowHandle == NULL) {
+												DWORD Code = GetLastError();
+												ProgContext.Log.Err("Failed to create a window.", "Sys err code: " + std::to_string(Code), __LINE__, __FILE_NAME__, __FUNCTION__);
+												return Code;
+								}			
+
 								WindowDC = GetDC(WindowHandle);
-								if (WindowDC == NULL) return 1;      // Add Error Logging Later.
+								if (WindowDC == NULL) {
+												DWORD Code = GetLastError();
+												ProgContext.Log.Err("Failed to get Device Context.", "Sys err code: " + std::to_string(Code), __LINE__, __FILE_NAME__, __FUNCTION__);
+												return Code;
+								}
 				
 								int attribs[] = {
 				                0x2003, 0x2027, // WGL_ACCELERATION_ARB | WGL_FULL_ACCELERATION_ARB
@@ -156,12 +200,24 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 												
 								int PFormat = 0;
 								unsigned int NumFormat = 0;
-								if (!wglChoosePixelFormatARB(WindowDC, attribs, 0, 1, &PFormat, &NumFormat)) return 1; // Add Error Logging Later.
+								if (!wglChoosePixelFormatARB(WindowDC, attribs, 0, 1, &PFormat, &NumFormat)) {
+												DWORD Code = GetLastError();
+												ProgContext.Log.Err("Failed to find the PixelFormat.", "Sys err code: " + std::to_string(Code), __LINE__, __FILE_NAME__, __FUNCTION__);
+												return Code;
+								}
 								
 								PIXELFORMATDESCRIPTOR Cpfd = {sizeof(PIXELFORMATDESCRIPTOR)};
 								
-								if (DescribePixelFormat(WindowDC, PFormat, sizeof(Cpfd), &Cpfd) == 0) return 1; // Add Error Logging Later.
-								if (!SetPixelFormat(WindowDC, PFormat, &Cpfd)) return 1; // Add Error Logging Later.
+								if (DescribePixelFormat(WindowDC, PFormat, sizeof(Cpfd), &Cpfd) == 0) {
+												DWORD Code = GetLastError();
+												ProgContext.Log.Err("Failed to clone PixelFormat.", "Sys err code: " + std::to_string(Code), __LINE__, __FILE_NAME__, __FUNCTION__);
+												return Code;
+								}
+								if (!SetPixelFormat(WindowDC, PFormat, &Cpfd)) {
+												DWORD Code = GetLastError();
+												ProgContext.Log.Err("Failed to set PixelFormat.", "Sys err code: " + std::to_string(Code), __LINE__, __FILE_NAME__, __FUNCTION__);
+												return Code;
+								}
 								
 								int CtxAttribs[] = {
 												0x9126, 0x00000001, // WGL_CONTEXT_PROFILE_MASK_ARB | WGL_CONTEXT_CORE_PROFILE_BIT_ARB				
