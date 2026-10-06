@@ -2,27 +2,42 @@
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#include <GL/gl.h>
 
 #include <thread>
 #include <string>
 
 #include "../Include/Wrapper.h"
 
-struct WindowContext {
-				bool running = true;
-				WPARAM ExitVal;
-};
+HWND WindowHandle;
+HDC WindowDC;
+HGLRC WGLCtx;
 
-WindowContext windowContext;
+wrp::wBOOL wrp::OpenGL_Context::SwapBuffers() {
+				return ::SwapBuffers(WindowDC);
+}
+
+wrp::ProgramContext ProgContext;
+
+wrp::wBOOL wrp::PlatformContext::BindContext(wrp::wBOOL BindUnbind) {
+				return wglMakeCurrent(WindowDC, WGLCtx);
+}
+
+wrp::PlatformContext PlatformCtx;
+
+// Retrive OpenGL DLL
+
+HMODULE OpenGL32 = GetModuleHandleA("opengl32.dll");
+
+
+
 
 LRESULT windProc(HWND wind, UINT msg, WPARAM wp, LPARAM lp) {
 				LRESULT rez = 0;
 
 				switch (msg) {
 								case WM_CLOSE:
-												windowContext.running = false;
-												windowContext.ExitVal = wp;
+												ProgContext.ShouldBeRunning = false;
+												ProgContext.ExitVal = wp;
 												break;
 								default:
 												rez = DefWindowProc(wind, msg, wp, lp);
@@ -32,13 +47,33 @@ LRESULT windProc(HWND wind, UINT msg, WPARAM wp, LPARAM lp) {
 				return rez;
 }
 
-int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd) {
-		
-				wrp::ProgramContext ProgContext;
+
+void* SafeGetProcAddress(const char* name) {
+				void* addr = (void*)wglGetProcAddress(name);
+				if (addr != NULL) return addr;
+
+				ProgContext.Log.Warn("Failed to locate procedure named \'" + std::string(name) +"\' in context." , __LINE__, __FILE_NAME__, __FUNCTION__);
 				
-				HWND WindowHandle;
-				HDC WindowDC;
-				HGLRC WGLCtx;
+				addr = (void*)GetProcAddress(OpenGL32, name);
+				
+				if (addr == NULL) ProgContext.Log.Err("Failed to locate procedure named \'" + std::string(name) +"\' in opengl32.dll." , __LINE__, __FILE_NAME__, __FUNCTION__);
+
+				return addr;
+}
+
+
+
+
+
+
+
+
+int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd) {
+				if (OpenGL32 == NULL) {
+								DWORD Code = GetLastError();
+								ProgContext.Log.Err("Failed to retrive opengl32.dll.", "Sys err code: " + std::to_string(Code), __LINE__, __FILE_NAME__, __FUNCTION__);
+								return Code;
+				}
 
 				// Wierd windows method of getting a version 3.3 OpenGL Context
 				{
@@ -233,8 +268,16 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 								DestroyWindow(DW);
 				}
 				
+				wglMakeCurrent(WindowDC, WGLCtx);
+				
+				if (gladLoadGLContext(&ProgContext.OpenGL.gl, (GLADloadfunc)SafeGetProcAddress) == 0) {
+								ProgContext.Log.Err("Failed to Load OpenGL functions with GLAD.", __LINE__, __FILE_NAME__, __FUNCTION__);
+								return 1;
+				}
 
-				std::thread SysAgnosticCode(wrp::_MAIN, &ProgContext);
+				wglMakeCurrent(NULL, NULL);
+
+				std::thread SysAgnosticCode(wrp::_MAIN, &ProgContext, &PlatformCtx);
 				SysAgnosticCode.detach();
 				
 				ShowWindow(WindowHandle, SW_SHOW);
@@ -242,30 +285,17 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 
 				MSG msg = {};
 				while (ProgContext.IsAlive) {
-								if (!windowContext.running) {
-												ProgContext.ShouldBeRunning = false;
-								}
-
 								while (PeekMessage(&msg, WindowHandle, 0, 0, PM_REMOVE) > 0) {
 												TranslateMessage(&msg);
 												DispatchMessage(&msg);
 								}
-								
-								wglMakeCurrent(WindowDC, WGLCtx);
-
-								glClearColor(0.5f, 0.2f, 0.0f, 1.0f);
-								glClear(GL_COLOR_BUFFER_BIT);
-        
-								SwapBuffers(WindowDC);
-
-								wglMakeCurrent(NULL, NULL);
 				}
 
 				wglDeleteContext(WGLCtx);
 				DeleteDC(WindowDC);
 				DestroyWindow(WindowHandle);
 				
-				return windowContext.ExitVal; 
+				return ProgContext.ExitVal; 
 }
 
 #endif 

@@ -2,24 +2,41 @@
 #include <string>
 #include <thread>
 #include <chrono>
+#include <cmath>
 
-using wrp::INT;
-using wrp::UINT;
-using wrp::FLOAT;
-using wrp::BOOL;
+using wrp::wBOOL;
+using wrp::wFLOAT;
+using wrp::wI8;
+using wrp::wI16;
+using wrp::wI32;
+using wrp::wI64;
+using wrp::wU8;
+using wrp::wU16;
+using wrp::wU32;
+using wrp::wU64;
+
+#define PI 3.14159 
+
+wFLOAT min(wFLOAT arg1, wFLOAT arg2) {
+				return (arg1 < arg2 ? arg1 : arg2);
+}
+
+wFLOAT max(wFLOAT arg1, wFLOAT arg2) {
+				return (arg1 > arg2 ? arg1 : arg2);
+}
 
 struct gamepad {
 				
-				FLOAT JLX = 0; // Left Joystick X
-				FLOAT JLY = 0; // Left Joystick Y
-				FLOAT JRX = 0; // Right Joystick X
-				FLOAT JRY = 0; // Right Joystick X
+				wFLOAT JLX = 0; // Left Joystick X
+				wFLOAT JLY = 0; // Left Joystick Y
+				wFLOAT JRX = 0; // Right Joystick X
+				wFLOAT JRY = 0; // Right Joystick X
 				
-				FLOAT LJDeadZone = 0; // Dead Zone for the left Joystick
-				FLOAT RJDeadZone = 0; // Dead Zone for the right Joystick
+				wFLOAT LJDeadZone = 0; // Dead Zone for the left Joystick
+				wFLOAT RJDeadZone = 0; // Dead Zone for the right Joystick
 
-				BOOL IsLJdown = false;
-				BOOL IsRJdown = false;
+				wBOOL IsLJdown = false;
+				wBOOL IsRJdown = false;
 
 				/*
 				 *    BL4       BR4
@@ -27,32 +44,32 @@ struct gamepad {
 				 *    BL1       BR1
 				 */
 
-				BOOL IsBL1Down = false;
-				BOOL IsBL2Down = false;
-				BOOL IsBL3Down = false;
-				BOOL IsBL4Down = false;
+				wBOOL IsBL1Down = false;
+				wBOOL IsBL2Down = false;
+				wBOOL IsBL3Down = false;
+				wBOOL IsBL4Down = false;
 
-				BOOL IsBR1Down = false;
-				BOOL IsBR2Down = false;
-				BOOL IsBR3Down = false;
-				BOOL IsBR4Down = false;
+				wBOOL IsBR1Down = false;
+				wBOOL IsBR2Down = false;
+				wBOOL IsBR3Down = false;
+				wBOOL IsBR4Down = false;
 
 				/*
 				 *  BL2  BR2
 				 *	BL1  BR1
 				 */
 
-				FLOAT BR1 = 0;
-				FLOAT BR2 = 0;
-				FLOAT BL1 = 0;
-				FLOAT BL2 = 0;
+				wFLOAT BR1 = 0;
+				wFLOAT BR2 = 0;
+				wFLOAT BL1 = 0;
+				wFLOAT BL2 = 0;
 
-				BOOL IsSpecial1Down = false; // Share
-				BOOL IsSpecial2Down = false; // Options
-				BOOL IsSpecial3Down = false; // Main Menu
+				wBOOL IsSpecial1Down = false; // Share
+				wBOOL IsSpecial2Down = false; // Options
+				wBOOL IsSpecial3Down = false; // Main Menu
 };
 
-BOOL PollInput(gamepad* Result, const INT& gamepadNum = 0 ) {
+wBOOL PollInput(gamepad* Result, const wI32& gamepadNum = 0 ) {
 				
 				// Get input from somewhere
 				// Update Gamepad Object
@@ -66,19 +83,28 @@ BOOL PollInput(gamepad* Result, const INT& gamepadNum = 0 ) {
 
 void wrp::MAIN(wrp::ProgramContext* Ctx) {
 				
-				INT c = 0;
-				while (Ctx->ShouldBeRunning) {
-								c++;
+				#define gl Ctx->OpenGL.gl
+				#define Render Ctx->OpenGL
+
+				Render.SwapBuffers();
 								
-								Ctx->Log.Info(std::to_string(c));
-								Ctx->Log.Info(std::to_string(c), __LINE__, __FILE_NAME__, __FUNCTION__);
-								Ctx->Log.Warn("This is a warning!", __LINE__, __FILE_NAME__, __FUNCTION__);
-								Ctx->Log.Err("FATAL ERROR!", "(trust!)", __LINE__, __FILE_NAME__, __FUNCTION__);
+				std::chrono::time_point<std::chrono::high_resolution_clock> start = std::chrono::high_resolution_clock::now();
 
-								std::chrono::duration<FLOAT> second = std::chrono::seconds(1);
-								std::this_thread::sleep_for(second);
+				while (Ctx->ShouldBeRunning) {
+								wFLOAT t = float(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count() % 1500) / 1000;
+								
+								wFLOAT R = max(std::sin(2*t*PI),0.0f);
+								wFLOAT G = std::sin(2*t*PI + PI);
+								wFLOAT B = max(max(2*t*PI + PI/2, 0.0f), 2*t*PI + PI);
 
-								if (c == 10) Ctx->ShouldBeRunning = false;
+								gl.ClearColor(R, G, B, 1.0f);
+								gl.Clear(GL_COLOR_BUFFER_BIT);
+								
+								Render.SwapBuffers();
+
+								std::chrono::time_point<std::chrono::high_resolution_clock> now = std::chrono::high_resolution_clock::now();
+
+								if (std::chrono::duration_cast<std::chrono::seconds>(now - start).count() > 10) Ctx->ShouldBeRunning = false;
 				}
 
 				//gamepad Gamepad;
