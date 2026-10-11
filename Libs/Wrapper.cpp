@@ -7,6 +7,7 @@ void wrp::_MAIN(wrp::ProgramContext* pc, wrp::PlatformContext* PlatformCtx) {
 				PlatformCtx->BindContext(true);
 
 				wrp::MAIN(pc);
+
 				pc->IsAlive = false;
 
 }

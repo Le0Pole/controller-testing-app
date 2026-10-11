@@ -1,7 +1,6 @@
 #pragma once
 
 #include <chrono>
-#include <filesystem>
 #include <string>
 #include <iostream>
 #include <stdint.h>
@@ -24,6 +23,12 @@ namespace wrp {
 
 				typedef bool wBOOL;
 				typedef std::string wSTRING;
+				
+				struct System_Functions {
+
+								wBOOL GetFileContent(wSTRING FilePath, wSTRING& Text);
+
+				};
 
 				struct Logging {
 
@@ -136,6 +141,9 @@ namespace wrp {
 
 								OpenGL_Context OpenGL;
 								Logging Log;
+								System_Functions OS;
+
+								void PollSystem(ProgramContext* Ctx);
 
 				};
 

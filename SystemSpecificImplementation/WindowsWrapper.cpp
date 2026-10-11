@@ -12,17 +12,61 @@ HWND WindowHandle;
 HDC WindowDC;
 HGLRC WGLCtx;
 
-wrp::wBOOL wrp::OpenGL_Context::SwapBuffers() {
-				return ::SwapBuffers(WindowDC);
-}
+struct WrapperVars {
+				wrp::wI32 XWindow = 0;
+				wrp::wI32 YWindow = 0;
+				wrp::wI32 dXWindow = 0;
+				wrp::wI32 dYWindow = 0;
+};
 
-wrp::ProgramContext ProgContext;
+WrapperVars Vars;
+
+
+
 
 wrp::wBOOL wrp::PlatformContext::BindContext(wrp::wBOOL BindUnbind) {
 				return wglMakeCurrent(WindowDC, WGLCtx);
 }
 
 wrp::PlatformContext PlatformCtx;
+
+
+
+
+wrp::wBOOL wrp::OpenGL_Context::SwapBuffers() {
+				return ::SwapBuffers(WindowDC);
+}
+
+
+wrp::wBOOL wrp::System_Functions::GetFileContent(wrp::wSTRING FilePath, wrp::wSTRING& Content) {
+				
+				wrp::wSTRING ret = "";
+
+				HANDLE File = CreateFileA(FilePath.data(), GENERIC_READ, 0 /*No sharing*/, NULL /*no security attributes*/, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL /*No temporary handle... what even is that???*/);
+				if (File == INVALID_HANDLE_VALUE) return 0;
+				
+				LARGE_INTEGER FileSize;
+				if (!GetFileSizeEx(File, &FileSize)) return 0;
+				
+				Content.resize(FileSize.LowPart);
+
+				DWORD BytesRead = 0;
+				if (!ReadFile(File, LPVOID(Content.data()), FileSize.LowPart, &BytesRead, NULL /*Synchronous read*/)) return 0;
+
+				CloseHandle(File);
+
+				return 1;
+				
+};
+
+
+void wrp::ProgramContext::PollSystem(wrp::ProgramContext* Ctx) {
+				Ctx->OpenGL.gl.Viewport(0, 0, Vars.dXWindow, Vars.dYWindow);
+};
+
+wrp::ProgramContext ProgContext;
+
+
 
 // Retrive OpenGL DLL
 
@@ -39,6 +83,16 @@ LRESULT windProc(HWND wind, UINT msg, WPARAM wp, LPARAM lp) {
 												ProgContext.ShouldBeRunning = false;
 												ProgContext.ExitVal = wp;
 												break;
+								case WM_SIZE:
+												Vars.dXWindow = wrp::wI32(wrp::wI16(LOWORD(lp)));
+												Vars.dYWindow = wrp::wI32(wrp::wI16(HIWORD(lp)));
+
+												break;
+								case WM_MOVE:
+												Vars.XWindow = wrp::wI32(wrp::wI16(LOWORD(lp)));
+												Vars.YWindow = wrp::wI32(wrp::wI16(HIWORD(lp)));
+
+												break;
 								default:
 												rez = DefWindowProc(wind, msg, wp, lp);
 												break;
@@ -52,7 +106,7 @@ void* SafeGetProcAddress(const char* name) {
 				void* addr = (void*)wglGetProcAddress(name);
 				if (addr != NULL) return addr;
 
-				ProgContext.Log.Warn("Failed to locate procedure named \'" + std::string(name) +"\' in context." , __LINE__, __FILE_NAME__, __FUNCTION__);
+				//ProgContext.Log.Warn("Failed to locate procedure named \'" + std::string(name) +"\' in context." , __LINE__, __FILE_NAME__, __FUNCTION__);
 				
 				addr = (void*)GetProcAddress(OpenGL32, name);
 				
@@ -197,10 +251,10 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 												WindowClass.lpszClassName,												
 												"Controller Testing Application", 
 												WS_OVERLAPPEDWINDOW, 
-												CW_USEDEFAULT, 
-												CW_USEDEFAULT, 
-												CW_USEDEFAULT, 
-												CW_USEDEFAULT, 
+												CW_USEDEFAULT, // X 
+												CW_USEDEFAULT, // Y
+												CW_USEDEFAULT, // Witdh
+												CW_USEDEFAULT, // Height
 												0, 0, GetModuleHandle(0), 0);	
 								
 								if (WindowHandle == NULL) {
@@ -266,8 +320,12 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 								wglDeleteContext(DummyContext);
 								DeleteDC(DummyDC);
 								DestroyWindow(DW);
+
+								
 				}
 				
+
+
 				wglMakeCurrent(WindowDC, WGLCtx);
 				
 				if (gladLoadGLContext(&ProgContext.OpenGL.gl, (GLADloadfunc)SafeGetProcAddress) == 0) {
@@ -277,6 +335,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 
 				wglMakeCurrent(NULL, NULL);
 
+
 				std::thread SysAgnosticCode(wrp::_MAIN, &ProgContext, &PlatformCtx);
 				SysAgnosticCode.detach();
 				
@@ -284,6 +343,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 				UpdateWindow(WindowHandle);
 
 				MSG msg = {};
+				
 				while (ProgContext.IsAlive) {
 								while (PeekMessage(&msg, WindowHandle, 0, 0, PM_REMOVE) > 0) {
 												TranslateMessage(&msg);
