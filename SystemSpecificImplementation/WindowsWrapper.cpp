@@ -8,6 +8,24 @@
 
 #include "../Include/Wrapper.h"
 
+// Prefer NVIDIA / AMD GPU
+
+extern "C" 
+{
+  __declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
+}
+
+extern "C"
+{
+  __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+}
+
+// Retrive OpenGL DLL
+HMODULE OpenGL32 = GetModuleHandleA("opengl32.dll");
+
+
+//  ============= Wrapper Windows Implementation =============
+
 HWND WindowHandle;
 HDC WindowDC;
 HGLRC WGLCtx;
@@ -23,7 +41,6 @@ WrapperVars Vars;
 
 
 
-
 wrp::wBOOL wrp::PlatformContext::BindContext(wrp::wBOOL BindUnbind) {
 				return wglMakeCurrent(WindowDC, WGLCtx);
 }
@@ -32,17 +49,24 @@ wrp::PlatformContext PlatformCtx;
 
 
 
-
 wrp::wBOOL wrp::OpenGL_Context::SwapBuffers() {
-				return ::SwapBuffers(WindowDC);
+				wrp::wBOOL swapResult = ::SwapBuffers(WindowDC);
+	
+				return swapResult;
 }
-
 
 wrp::wBOOL wrp::System_Functions::GetFileContent(wrp::wSTRING FilePath, wrp::wSTRING& Content) {
 				
 				wrp::wSTRING ret = "";
 
-				HANDLE File = CreateFileA(FilePath.data(), GENERIC_READ, 0 /*No sharing*/, NULL /*no security attributes*/, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL /*No temporary handle... what even is that???*/);
+				HANDLE File = CreateFileA(FilePath.data(), 
+												GENERIC_READ, 
+												0 /*No sharing*/, 
+												NULL /*no security attributes*/, 
+												OPEN_EXISTING, 
+												FILE_ATTRIBUTE_NORMAL, 
+												NULL /*No temporary handle... what even is that???*/);
+
 				if (File == INVALID_HANDLE_VALUE) return 0;
 				
 				LARGE_INTEGER FileSize;
@@ -61,19 +85,15 @@ wrp::wBOOL wrp::System_Functions::GetFileContent(wrp::wSTRING FilePath, wrp::wST
 
 
 void wrp::ProgramContext::PollSystem(wrp::ProgramContext* Ctx) {
-				Ctx->OpenGL.gl.Viewport(0, 0, Vars.dXWindow, Vars.dYWindow);
+				if (Vars.dXWindow > 0 && Vars.dYWindow > 0){
+								Ctx->OpenGL.gl.Viewport(0, 0, Vars.dXWindow, Vars.dYWindow);
+				}
 };
 
 wrp::ProgramContext ProgContext;
 
 
-
-// Retrive OpenGL DLL
-
-HMODULE OpenGL32 = GetModuleHandleA("opengl32.dll");
-
-
-
+//  ==========================
 
 LRESULT windProc(HWND wind, UINT msg, WPARAM wp, LPARAM lp) {
 				LRESULT rez = 0;
@@ -166,13 +186,13 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 												1,
 												PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,
 												PFD_TYPE_RGBA,
-												24,
+												32,
 												0, 0, 
 												0, 0, 
 												0, 0,
-								        8, 0,
+								        0, 0,
 												0, 0, 0, 0, 0,
-												32,
+												24,
 												8, 
 												0,
 												PFD_MAIN_PLANE,
@@ -215,6 +235,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 												ProgContext.Log.Err("Failed to locate wglCreateContextAttribsARB.", "Sys err code: " + std::to_string(Code), __LINE__, __FILE_NAME__, __FUNCTION__);
 												return Code;
 								}
+
 								PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC) RetPROC;
 								
 								
@@ -225,6 +246,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 												ProgContext.Log.Err("Failed to locate wglChoosePixelFormatARB.", "Sys err code: " + std::to_string(Code), __LINE__, __FILE_NAME__, __FUNCTION__);
 												return Code;
 								}
+
 								PFNWGLCHOOSEPIXELFORMATARBPROC wglChoosePixelFormatARB = (PFNWGLCHOOSEPIXELFORMATARBPROC) RetPROC;
 
 								wglMakeCurrent(NULL, NULL);
@@ -271,20 +293,14 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 								}
 				
 								int attribs[] = {
-				                0x2003, 0x2027, // WGL_ACCELERATION_ARB | WGL_FULL_ACCELERATION_ARB
-				                0x201b, 8,      // WGL_ALPHA_BITS_ARB
-												0x2022, 24,     // WGL_DEPTH_BITS_ARB
-				                0x2001, 1,      // WGL_DRAW_TO_WINDOW_ARB
-												0x2015, 8,      // WGL_RED_BITS_ARB
-												0x2017, 8,      // WGL_GREEN_BITS_ARB
-												0x2019, 8,      // WGL_BLUE_BITS_ARB
-				                0x2013, 0x202B, // WGL_PIXEL_TYPE_ARB | WGL_TYPE_RGBA_ARB
-				                0x2010,	1,      // WGL_SUPPORT_OPENGL_ARB
-												0x2014,	32,     // WGL_COLOR_BITS_ARB
-												0x2023, 1,      // WGL_DOUBLE_BUFFER_ARB
-												0x2012, false,  // WGL_STEREO_ARB
-												0x2024, 0,      // WGL_AUX_BUFFERS_ARB
-				                0, 0
+												0x2001, GL_TRUE, // WGL_DRAW_TO_WINDOW_ARB
+												0x2010, GL_TRUE, // WGL_SUPPORT_OPENGL_ARB
+												0x2011, GL_TRUE, // WGL_DOUBLE_BUFFER_ARB
+												0x2013, 0x202B , // WGL_PIXEL_TYPE_ARB | WGL_TYPE_RGBA_ARB
+												0x2014, 32     , // WGL_COLOR_BITS_ARB
+												0x2022, 24     , // WGL_DEPTH_BITS_ARB
+												0x2023, 8      , // WGL_STENCIL_BITS_ARB
+												0                // END
 								};
 												
 								int PFormat = 0;
@@ -302,6 +318,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 												ProgContext.Log.Err("Failed to clone PixelFormat.", "Sys err code: " + std::to_string(Code), __LINE__, __FILE_NAME__, __FUNCTION__);
 												return Code;
 								}
+
 								if (!SetPixelFormat(WindowDC, PFormat, &Cpfd)) {
 												DWORD Code = GetLastError();
 												ProgContext.Log.Err("Failed to set PixelFormat.", "Sys err code: " + std::to_string(Code), __LINE__, __FILE_NAME__, __FUNCTION__);
@@ -310,9 +327,9 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 								
 								int CtxAttribs[] = {
 												0x9126, 0x00000001, // WGL_CONTEXT_PROFILE_MASK_ARB | WGL_CONTEXT_CORE_PROFILE_BIT_ARB				
-												0x2091, 3, // WGL_CONTEXT_MAJOR_VERSION_ARB
-												0x2092, 3, // WGL_CONTEXT_MINOR_VERSION_ARB
-												0, 0
+												0x2091, 3         , // WGL_CONTEXT_MAJOR_VERSION_ARB
+												0x2092, 3         , // WGL_CONTEXT_MINOR_VERSION_ARB
+												0                   // END
 								};
 				
 								WGLCtx = wglCreateContextAttribsARB(WindowDC, 0, CtxAttribs);
@@ -321,7 +338,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 								DeleteDC(DummyDC);
 								DestroyWindow(DW);
 
-								
+								wglMakeCurrent(NULL, NULL);
 				}
 				
 
@@ -334,7 +351,6 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 				}
 
 				wglMakeCurrent(NULL, NULL);
-
 
 				std::thread SysAgnosticCode(wrp::_MAIN, &ProgContext, &PlatformCtx);
 				SysAgnosticCode.detach();

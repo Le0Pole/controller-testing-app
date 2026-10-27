@@ -4,9 +4,14 @@
 
 void wrp::_MAIN(wrp::ProgramContext* pc, wrp::PlatformContext* PlatformCtx) {
 				
-				PlatformCtx->BindContext(true);
+				if (!PlatformCtx->BindContext(true)) {
+								pc->Log.Err("Failed to bind to context", __LINE__,__FILE_NAME__,__FUNCTION__);
+								goto end;
+				}
 
 				wrp::MAIN(pc);
+				
+				end:
 
 				pc->IsAlive = false;
 

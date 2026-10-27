@@ -1,6 +1,5 @@
 #include "Include/Wrapper.h"
 #include "Include/LinearAlgebra/Vec.h"
-#include <iterator>
 #include <malloc.h>
 #include <string>
 #include <thread>
@@ -188,6 +187,9 @@ void wrp::MAIN(wrp::ProgramContext* Ctx) {
 				gl.VertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(wFLOAT), nullptr);
 				gl.EnableVertexAttribArray(0);				
 
+				Ctx->Log.Info("Version: "  + wSTRING(reinterpret_cast<const char*>(gl.GetString(GL_VERSION))));
+				Ctx->Log.Info("Renderer: " + wSTRING(reinterpret_cast<const char*>(gl.GetString(GL_RENDERER))));
+				Ctx->Log.Info("Vendor: "   + wSTRING(reinterpret_cast<const char*>(gl.GetString(GL_VENDOR))));
 
 				std::chrono::time_point<std::chrono::high_resolution_clock> start = std::chrono::high_resolution_clock::now();
 
@@ -199,7 +201,7 @@ void wrp::MAIN(wrp::ProgramContext* Ctx) {
 								gl.Clear(GL_COLOR_BUFFER_BIT);
 								
 								gl.DrawArrays(GL_TRIANGLES, 0, 3);
-
+								
 								Render.SwapBuffers();
 
 								std::chrono::time_point<std::chrono::high_resolution_clock> now = std::chrono::high_resolution_clock::now();
