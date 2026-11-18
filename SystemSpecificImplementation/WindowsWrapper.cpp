@@ -355,6 +355,59 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 				std::thread SysAgnosticCode(wrp::_MAIN, &ProgContext, &PlatformCtx);
 				SysAgnosticCode.detach();
 				
+				// ** TESTING **
+				
+				/*
+				UINT NumberOfDevices = 0;
+				
+				if (GetRawInputDeviceList(NULL, &NumberOfDevices, sizeof(RAWINPUTDEVICELIST)) == UINT(-1) != 0) {
+								DWORD Code = GetLastError();
+								ProgContext.Log.Err("ERROR!", "Sys err code: " + std::to_string(Code), __LINE__, __FILE_NAME__, __FUNCTION__);
+								ProgContext.ShouldBeRunning = false;
+								return 1;
+				}
+
+				PRAWINPUTDEVICELIST Devices = PRAWINPUTDEVICELIST(malloc(sizeof(RAWINPUTDEVICELIST) * NumberOfDevices));
+				
+				if (Devices == NULL) {
+								ProgContext.Log.Err("Unable to allocate memory");
+								ProgContext.ShouldBeRunning = false;
+								return 1;
+				}				
+
+				UINT nDevices = GetRawInputDeviceList(Devices, &NumberOfDevices, sizeof(RAWINPUTDEVICELIST));
+				
+				if (nDevices == UINT(-1)) {
+								ProgContext.Log.Err("Unable to write devices to memory");
+								free(Devices);
+								ProgContext.ShouldBeRunning = false;
+								return 1;
+				}
+				
+
+				ProgContext.Log.Warn("Number of HIDs: " + std::to_string(NumberOfDevices));
+				for (UINT i = 0; i < NumberOfDevices; i++) {
+								ProgContext.Log.Info("=============");
+								ProgContext.Log.Info("Device: " + std::to_string(i));
+								ProgContext.Log.Info("dwType: " + std::to_string(Devices[i].dwType));
+								
+								wrp::wSTRING Data;
+								Data.resize(1000,0x0);
+								UINT cbsize = 1000;
+								UINT ret = GetRawInputDeviceInfo(Devices[i].hDevice, RIDI_DEVICENAME, Data.data(), &cbsize);
+								if (ret > 0) {
+												ProgContext.Log.Info("Device Name: " + Data);
+								} else {
+												ProgContext.Log.Err("Failed to read Device name!");
+								}
+				}
+				
+				free(Devices);
+				*/
+
+
+				// ** END OF TESTING**
+
 				ShowWindow(WindowHandle, SW_SHOW);
 				UpdateWindow(WindowHandle);
 

@@ -1,5 +1,4 @@
 #include "../Include/Wrapper.h"
-
 #ifdef __WIN32__
 
 void wrp::_MAIN(wrp::ProgramContext* pc, wrp::PlatformContext* PlatformCtx) {
@@ -10,11 +9,11 @@ void wrp::_MAIN(wrp::ProgramContext* pc, wrp::PlatformContext* PlatformCtx) {
 				}
 
 				wrp::MAIN(pc);
-				
 				end:
 
 				pc->IsAlive = false;
-
+				return ;
+				
 }
 
 #endif
