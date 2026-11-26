@@ -405,6 +405,31 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 				free(Devices);
 				*/
 
+				UINT NumberOfDevices = 0;
+				
+				if (GetRawInputDeviceList(NULL, &NumberOfDevices, sizeof(RAWINPUTDEVICELIST)) == UINT(-1) != 0) {
+								DWORD Code = GetLastError();
+								ProgContext.Log.Err("ERROR!", "Sys err code: " + std::to_string(Code), __LINE__, __FILE_NAME__, __FUNCTION__);
+								ProgContext.ShouldBeRunning = false;
+								return 1;
+				}
+
+				PRAWINPUTDEVICELIST Devices = PRAWINPUTDEVICELIST(malloc(sizeof(RAWINPUTDEVICELIST) * NumberOfDevices));
+				
+				if (Devices == NULL) {
+								ProgContext.Log.Err("Unable to allocate memory");
+								ProgContext.ShouldBeRunning = false;
+								return 1;
+				}				
+
+				UINT nDevices = GetRawInputDeviceList(Devices, &NumberOfDevices, sizeof(RAWINPUTDEVICELIST));
+				
+				if (nDevices == UINT(-1)) {
+								ProgContext.Log.Err("Unable to write devices to memory");
+								free(Devices);
+								ProgContext.ShouldBeRunning = false;
+								return 1;
+				}
 
 				// ** END OF TESTING**
 

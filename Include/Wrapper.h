@@ -4,7 +4,7 @@
 #include <string>
 #include <iostream>
 #include <stdint.h>
-
+#include <hash_map>
 
 #include "GLAD/gl.h"
 
@@ -28,6 +28,80 @@ namespace wrp {
 
 								wBOOL GetFileContent(wSTRING FilePath, wSTRING& Text);
 
+				};
+				
+				struct Input {
+								
+								enum Mapping {
+
+												/* KEYBOARD */
+												A = 0x0000001,
+												B = 0x0000002,
+												C = 0x0000003,
+												D = 0x0000004,
+												E = 0x0000005,
+												F = 0x0000006,
+												G = 0x0000007,
+												H = 0x0000008,
+												I = 0x0000009,
+												J = 0x000000A,
+												K = 0x000000B,
+												L = 0x000000C,
+												M = 0x000000D,
+												N = 0x000000E,
+												O = 0x000000F,
+												P = 0x0000010,
+												Q = 0x0000011,
+												R = 0x0000012,
+												S = 0x0000013,
+												T = 0x0000014,
+												U = 0x0000015,
+												V = 0x0000016,
+												W = 0x0000017,
+												X = 0x0000018,
+												Y = 0x0000019,
+												Z = 0x000001A,
+												N0 = 0x000001B,
+												N1 = 0x000001C,
+												N2 = 0x000001D,
+												N3 = 0x000001E,
+												N4 = 0x000001F,
+												N5 = 0x0000020,
+												N6 = 0x0000021,
+												N7 = 0x0000022,
+												N8 = 0x0000023,
+												N9 = 0x0000024,
+												ESC = 0x0000025,
+												Space = 0x0000026,
+
+												/* SPECIAL KEYS */
+
+												LS = 0x0000070,
+												LeftShift = 0x0000070,
+												RS = 0x0000071,
+												RightShift = 0x0000071,
+												LA = 0x0000072,
+												LeftAlt = 0x0000072,
+												RA = 0x0000073,
+												RightAlt = 0x0000073,
+												LC = 0x0000074,
+												LeftControl = 0x0000074,
+												RC = 0x0000075,
+												RightControl = 0x0000075,
+												Super = 0x0000076,
+												Caps = 0x0000077,
+												Tab = 0x0000078,
+
+
+							};
+
+								struct InputState {
+
+								};								
+
+								struct Device {
+												
+								};
 				};
 
 				struct Logging {
@@ -55,8 +129,6 @@ namespace wrp {
 								wSTRING WARN_COLOR  = "\033[38;2;216;167;21m";
 								wSTRING ERR_COLOR   = "\033[48;2;219;24;24;38;2;255;255;255m";
 								wSTRING CLEAR_COLOR = "\033[0m";								
-
-								private:
 
 								wSTRING NowTimestamp() {
 												if (RelativeLogTime) {
